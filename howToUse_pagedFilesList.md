@@ -38,7 +38,7 @@ Fig. 02
  
   7. Copy the contents of "../pagedFilesList.txt" into "Code.gs" while overwriting the sample myFunction template in it.
   8. Use Ctrl+S keyboard shortcut or the floppy icon next to "Run" in the code editor menu to save the file. 
-  9. When you click on run you will be guided through a few steps to authorise this script as an "app". Click on "Review Permissions".
+  9. When you click on "Run" you will be guided through a few steps to authorise this script as an "app". Click on "Review Permissions".
 
 <p align="center">
   <img width="65%" src="/img/using-script-editor-03.png"></img>
@@ -60,7 +60,7 @@ Fig. 04
   12. The script will stop running after 5.5 mins and will create a trigger to run the script again in a set of 5.5 min intervals till it goes through all items in the drive. This trigger based method is needed because GCP prevents a script from continuously running for longer than 6 min. Each trigger gets "Disabled" after being launched once.
   13. In the tab https://script.google.com/home/triggers you will be able to see those automated triggers being created every 5.5 min. Refresh the page to see the new ones.
   14. In the spreadsheet you will be able to see the data get populated in "Sheet1".
-  15. In "Sheet2" you will see a few pieces of data that are used for tracking the run number, the pageToken and itemCount between runs. Don't modify these while the script is running. 
+  15. In "Sheet2" you will see a few pieces of data that are used for tracking the `pageToken`, `responseNum` and `itemCount` between successive executions of the script. Don't modify these while the script is running. You can manually stop the script and continue later from a saved `pageToken` in "Sheet2". 
   16. Delete all cells of "Sheet1" and "Sheet2" if the runs fail and you want to start over. 
   17. You can change the query and start with a new spreadsheet if you like. The spreadsheet needs to have a blank "Sheet1" and "Sheet2" at the beginning of running the script. 
 
