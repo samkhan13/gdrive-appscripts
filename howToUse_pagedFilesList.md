@@ -131,9 +131,9 @@ These examples can hopefully provide insights into how a query string can be put
 - https://developers.google.com/drive/api/v3/ref-search-terms
 - https://developers.google.com/drive/api/v3/mime-types
 
-- Currently available references for Drive API using Apps Script: 
-  - https://developers.google.com/apps-script/reference/drive/
-  - https://developers.google.com/apps-script/advanced/drive 
+- Currently available references using Apps Script: 
+  - https://developers.google.com/apps-script/reference/drive/ (DriveApp API, maybe V3)
+  - https://developers.google.com/apps-script/advanced/drive  (Drive API V2)
 
 - DriveApp based sharingAccess and sharingPermission reference:
   - https://developers.google.com/apps-script/reference/drive/access
