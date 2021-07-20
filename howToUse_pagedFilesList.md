@@ -72,7 +72,7 @@ Fig. 04
   - `query` is a string for serching for various file types. More on this in the following section. 
 
 ### Acceptable Query Format
-This examples can hopefully provide insights into how a query string can be put together.
+These examples can hopefully provide insights into how a query string can be put together.
   - `"'me' in owners"` 
     - This will search for all files within the scope of "My Drive", which is the root directory of Google Drive. 
 
@@ -104,3 +104,47 @@ This examples can hopefully provide insights into how a query string can be put 
 
   - `"title contains 'office' and starred=false"`
     - Finds all files and folders with the sub-string office in their title (i.e. name) and that don't happen be starred in "My Drive".
+
+## Notes
+1. Only Drive API V2 allows `pageToken` based queries using `Drive.Files.List()`. This is needed to overcome "Time Out" issues of running Apps Script via default Google Compute Platform. However, a number of things like "sharingAccess" and "sharingPermission" are more conviniently usable via Drive App API. Using both API means that the same file's details are obtained twice using a slow "GET" operation. 
+2. An array of [File "object"](https://developers.google.com/drive/api/v3/reference/files) of `"kind": "drive#file"`, as described in Drive API V3, is fethced via `Drive.Files.List()` even though `Drive.Files.List()` with `pageToken` is only described in Drive API V2 "[Advanced Google Services Examples](https://developers.google.com/apps-script/advanced/drive#listing_folders)". 
+3. Also, `pageSize` as a keyword doesn't work in `Drive.Files.List()`, the key used is `maxResults`.
+4. The above things are considerably different than a [File "class"](https://developers.google.com/apps-script/reference/drive/file) fetched via DriveApp API. 
+5. It is possible that legacy API was handed over to a new team that decided to update it by "starting from scratch." So now the different versions are very inconsistent compared to eachother. 
+6. The words used in Google Drive for file permissions like "View", "Comment" or "Edit" are more in line with DriveApp V2 API. However, in Drive API these permissions are identified as "reader" and "writer" which doesn't translate properly for answering, "who can write only comments vs write content as well as comments for a file?"
+7. There are lots of wierd ways in which a file's parent folder might have different permissions that inherited but were later modified manually. There are many more wierd ways in which a file's parent folder may not exist anymore in any Google Storage bucket. 
+8. Drive API is designed to get only some default descriptors of a file. So not all fields of a file are fetched and more effort needs to be put into reading documentation for ".
+9. According to: https://developers.google.com/drive/api/v3/about-files#file_organization
+    - An item in Drive is a file.    
+    - Folders are files with a metadata i.e `mimeType = 'application/vnd.google-apps.folder'`
+    - An item's permisions can be changed if 
+      - it is owned by a user, 
+      - a user was granted "writer" permission for the item with "writerCanShare = true"
+10. According to: https://developers.google.com/drive/api/v3/search-files
+    - `Drive.Files.list()` without any parameters returns all items in user's "My Drive". But this will time-out after six minutes without using pageTokens and triggers.
+11. There is most probably a simple way to spool rows that need to be written into the sheet and only send one "POST" method ever so often instead of calling the method per row. This will speed up things and make the code more efficient. 
+12. Please do fork and improve this. Please send pull request with better refactored code. 
+
+
+## References:
+- https://developers.google.com/drive/api/v3/search-files
+- https://developers.google.com/drive/api/v3/ref-search-terms
+- https://developers.google.com/drive/api/v3/mime-types
+
+- Currently available references for Drive API using Apps Script: 
+  - https://developers.google.com/apps-script/reference/drive/
+  - https://developers.google.com/apps-script/advanced/drive 
+
+- DriveApp based sharingAccess and sharingPermission reference:
+  - https://developers.google.com/apps-script/reference/drive/access
+  - https://developers.google.com/apps-script/reference/drive/permission
+
+## Inspirations
+-  [woodwardtw/tellmeyoursecrets.js](https://gist.github.com/woodwardtw/22a199ecca73ff15a0eb) 
+-  [ichaer/tellmeyoursecrets.js](https://gist.github.com/ichaer/d7b91d348a250e09146057857f7b3cc2)
+-  [rzrbld/tellmeyoursecrets.js](https://gist.github.com/rzrbld/ba50a0f51b081a5699cb1d4996e4925a)
+-  [danjargold/whatFilesHaveIShared.gs](https://gist.github.com/danjargold/c6542e68fe3a3b46eeb0172f914641bc)
+-  [JavierCane/listGoogleDriveSharedDocuments.js](https://gist.github.com/JavierCane/28f7307ceeaf6464431c1418b598a817)
+-  [moya-a/G-Drive-SharedFiles-Checker/checker.js](https://github.com/moya-a/G-Drive-SharedFiles-Checker/blob/main/checker.js)
+
+Thank you. 
