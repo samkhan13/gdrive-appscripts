@@ -1,5 +1,5 @@
 # Introduction
-This file provides instruction on how to use pagedFilesList.txt as a Google Apps Script.
+This file provides instruction on how to use [pagedFilesList.txt](https://github.com/samkhan13/gdrive-appscripts/blob/main/pagedFileList.txt) as a Google Apps Script.
 
 Disclaimer: Use this example at your own risk.
 License: CC0
@@ -36,7 +36,7 @@ Fig. 01
 Fig. 02
 </p>
  
-  7. Copy the contents of "../pagedFilesList.txt" into "Code.gs" while overwriting the sample myFunction template in it.
+  7. Copy the contents of ["../pagedFilesList.txt"](https://github.com/samkhan13/gdrive-appscripts/blob/main/pagedFileList.txt) into "Code.gs" while overwriting the sample myFunction template in it.
   8. Use Ctrl+S keyboard shortcut or the floppy icon next to "Run" in the code editor menu to save the file. 
   9. When you click on "Run" you will be guided through a few steps to authorise this script as an "app". Click on "Review Permissions".
 
