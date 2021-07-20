@@ -113,7 +113,7 @@ These examples can hopefully provide insights into how a query string can be put
 5. It is possible that legacy API was handed over to a new team that decided to update it by "starting from scratch." So now the different versions are very inconsistent compared to eachother. 
 6. The words used in Google Drive for file permissions like "View", "Comment" or "Edit" are more in line with DriveApp V2 API. However, in Drive API these permissions are identified as "reader" and "writer" which doesn't translate properly for answering, "who can write only comments vs write content as well as comments for a file?"
 7. There are lots of wierd ways in which a file's parent folder might have different permissions that inherited but were later modified manually. There are many more wierd ways in which a file's parent folder may not exist anymore in any Google Storage bucket. 
-8. Drive API is designed to get only some default descriptors of a file. So not all fields of a file are fetched and more effort needs to be put into reading documentation for ".
+8. Drive API is designed to get only some default descriptors of a file. So not all fields of a file are fetched and more effort needs to be put into reading documentation for "[getting specific fields of a file](https://developers.google.com/drive/api/v3/fields-parameter)".
 9. According to: https://developers.google.com/drive/api/v3/about-files#file_organization
     - An item in Drive is a file.    
     - Folders are files with a metadata i.e `mimeType = 'application/vnd.google-apps.folder'`
