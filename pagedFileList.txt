@@ -1,0 +1,221 @@
+/*
+The purpose of this script is to inspect all files within Google Drive that have been shared with 
+someone.
+
+The results of the search include details about those who can view, comment or edit a shared file, 
+which are tabulated within the first sheet of the spreadsheet associated with the script. 
+
+The spreadsheet's second sheet stores script variables that are used for getting subsequent query 
+response after stopping due to a manual input or a programmed trigger. Do not alter them.
+
+Key concepts used include paged query response and repeatedly triggered main function. The chain of
+triggers ends when page tokens are exhausted.
+*/
+
+// Global variables
+const epochStamp = new Date().getTime();
+
+const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+const sheet1 = spreadsheet.getSheets()[0];
+const sheet2 = spreadsheet.getSheets()[1];
+
+const maxExecTime = 390000; // must be less than 360000 millisec(6 mins) and greater than 60000 millisec (1 min)
+
+const maxQueryItems = 100; // default of 100 in Drive.Files.list()
+const query = "'me' in owners and trashed = false"; // permissions of owned files can definitely be changed
+
+const dwellTime = 15000; // 0.25 min
+
+function main() {
+  var responseNum = sheet2.getRange('A2').getValue();
+
+  if (responseNum === "") {
+    const headerRow = [
+      "name", "parentFolder", "dateCreated",
+      "sharingAccess","sharingPermission",
+      "viewerEmails", "editorEmails",
+      "mimeType", "size",
+      "ID", "altLink"
+    ];
+
+    sheet1.appendRow(headerRow);
+    sheet1.setFrozenRows(1);
+    
+    firstFetch();
+
+  } else {
+    var usingPageToken = sheet2.getRange('A1').getValue();
+    var responseNum = sheet2.getRange('A2').getValue();
+    var itemCount = sheet2.getRange('A3').getValue();
+    
+    nextFetch(usingPageToken,responseNum,itemCount);
+  } 
+}
+
+// assume entire first response is inspected within maxExecTime
+function firstFetch() {
+  var responseNum = 1;
+  
+  Logger.log("Started processing response number %s.",responseNum);
+
+  var usingPageToken;
+  var response = getResponse(usingPageToken);
+
+  if (response.items && response.items.length > 0) {
+    for (var i = 0; i < response.items.length; i++) {
+      var item = response.items[i];
+      if (item.shared) {
+        inspect(item);
+      }
+    }
+    
+    var itemCount = response.items.length;
+    sheet2.getRange('A3').setValue(itemCount);
+    Logger.log('Inspected first %s items.',itemCount);
+
+    var responseNum = responseNum + 1;
+    checkNextFetch(response,responseNum,itemCount);
+
+  } else {
+    Logger.log('No response recieved.');
+  }
+}
+
+function checkNextFetch(response,responseNum,itemCount) {
+  usingPageToken = response.nextPageToken;
+  if (usingPageToken){
+    nextFetch(usingPageToken,responseNum,itemCount);
+  } else {
+    Logger.log(
+      "No additional pageToken found. \
+      \nAll responses processed with total of %s items inspected.", itemCount);
+    return;
+  }
+}
+
+function nextFetch(usingPageToken,responseNum,itemCount) {
+  isAfterTrigger = sheet2.getRange('A4').getValue(); // trigger flag
+  if (isAfterTrigger == true) {
+    Logger.log("Inspecting items from response number %s after trigger.",responseNum);
+
+    i = sheet2.getRange('A5').getValue(); // continuing "item = response.items[i]"
+
+    sheet2.getRange('A4').setValue(false); // reset trigger flag
+    
+  } else {
+    Logger.log("Inspecting items from response number %s.",responseNum);
+    var i = 0;
+  }
+
+  var response = getResponse(usingPageToken);
+  if (response.items && response.items.length > 0) {
+    for (i; i < response.items.length; i++) {
+      if (execTimeIsUp()) {        
+        prepTrigger(usingPageToken,responseNum,itemCount,i);
+
+        // Exit to main()
+        Logger.log(
+          "Execution time is up. \
+          \nCreated trigger to launch 'main' after %s millisec.", dwellTime);
+        return;
+      }
+
+      // Else continue "for loop" within maxExecTime
+      var item = response.items[i];
+      if (item.shared) {
+        inspect(item);
+      }
+    }
+    itemCount += response.items.length;
+    sheet2.getRange('A3').setValue(itemCount);
+    Logger.log('Inspected %s items so far.',itemCount);
+
+    var responseNum = responseNum + 1;
+    checkNextFetch(response,responseNum,itemCount);
+
+  } else {
+    Logger.log('No additional response found.');
+  }  
+}
+
+function execTimeIsUp() {
+  const now = new Date();
+  var elapsedTime = now.getTime() - epochStamp;
+  return elapsedTime > maxExecTime; 
+}
+
+function prepTrigger(usingPageToken,responseNum,itemCount,i){
+  // save variables to sheet for use after trigger
+  sheet2.getRange('A1').setValue(usingPageToken);
+  sheet2.getRange('A2').setValue(responseNum);
+  sheet2.getRange('A3').setValue(itemCount);
+  sheet2.getRange('A4').setValue(true); // trigger used
+  sheet2.getRange('A5').setValue(i); // for continuing "item = response.items[i]" in nextFetch()
+
+  // set trigger for calling main 
+  ScriptApp.newTrigger("main")
+  .timeBased()
+  .after(dwellTime) 
+  .create();
+}
+
+function getResponse(usingPageToken){
+  response = Drive.Files.list({
+    q: query,
+    maxResults: maxQueryItems, 
+    pageToken: usingPageToken
+  });
+
+  return response;
+}
+
+function inspect(item) {
+  var file = DriveApp.getFileById(item.id);
+  
+  const viewerEmails = file.getViewers().map(v => v.getEmail()); // also gets commenter emails
+  const editorEmails = file.getEditors().map(e => e.getEmail());
+
+  // Some items don't have parent folder which produces an error. 
+  try {
+    var fileParents = file.getParents();
+    parentFolderName = fileParents.next().getName();
+  } catch(errormsg) {
+    Logger.log(errormsg);
+    var parentFolderName = "?";
+  }
+  
+  // Some items don't have proper sharing settings which produces an error.
+  try {
+    var sharingAccess = file.getSharingAccess().name();
+    var sharingPermission = file.getSharingPermission().name();
+    
+    prepRowData (
+      item,parentFolderName,
+      sharingAccess,sharingPermission,
+      viewerEmails,editorEmails);
+    
+  } catch(err) {
+    Logger.log(err);
+    var sharingAccess = "sharing_access_issue";
+    
+    prepRowData (
+      item,parentFolderName,
+      sharingAccess,sharingPermission,
+      viewerEmails,editorEmails);
+  }
+}
+
+function prepRowData (
+  item,parentFolderName,
+  sharingAccess,sharingPermission,
+  viewerEmails,editorEmails) {
+  
+  var rowData = [
+    item.title, parentFolderName, item.createdDate.split("T")[0], 
+    sharingAccess, sharingPermission,
+    viewerEmails.toString(), editorEmails.toString(), 
+    item.mimeType, item.fileSize, 
+    item.id, item.alternateLinks];
+
+  sheet1.appendRow(rowData);
+}
